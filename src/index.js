@@ -34,16 +34,17 @@ const TimerDashboard = () => {
             title: "Learn React",
             project: "World Domination",
             elapsed: "8986300",
-            runningSince: Date.now()
+            runningSince: Date.now(),
         },
         {
             id: uuidv4(),
             title: "Use Hook",
             project: "React FTW",
             elapsed: "3890985",
-            runningSince: null
-        }
+            runningSince: null,
+        },
     ]);
+    
     return (
         <Container maxWidth="sm">
             <Box display="flex" justifyContent="center" m={3} mb={1}>
@@ -76,33 +77,33 @@ const EditableTimerList = ({ timers }) => {
 };
 
 // Stateful: hold editFormOpen status
-
-const EditableTimerContext = React.createContext({
+const EditFormContext = React.createContext({
     editFormOpen: false,
-    handleEditFormOpen: () => {}
+    toggleEditFormOpen: () => {}
 });
 
 const EditableTimer = ({ id, title, project, elapsed, runningSince }) => {
-    const [editFormOpen, setEditFormOpen] = React.useState(false);
 
-    const handleEditFormOpen = () => {
+    const [editFormOpen, setEditFormOpen] = React.useState(false);
+    const toggleEditFormOpen = () => {
         setEditFormOpen(true);
     };
 
     if (editFormOpen) {
-        return <TimerForm title={title} project={project} />;
+        return (
+            <TimerForm title={title} project={project} />
+        );
     } else {
         return (
-            <EditableTimerContext.Provider value={editFormOpen}>
-                <Timer
-                    id={id}
-                    title={title}
-                    project={project}
-                    elapsed={elapsed}
-                    runningSince={runningSince}
-                    onClick={handleEditFormOpen}
-                />
-            </EditableTimerContext.Provider>
+            <EditFormContext.Provider value={{ editFormOpen, toggleEditFormOpen }}>
+            <Timer
+                id={id}
+                title={title}
+                project={project}
+                elapsed={elapsed}
+                runningSince={runningSince}
+            />
+            </EditFormContext.Provider>
         );
     }
 };
@@ -248,6 +249,7 @@ const TimerForm = ({ id, title, project, onInformedFabClose }) => {
 };
 
 // Stateful: hold isOpen status
+// TODO: Move Open state to Parents
 const ToggleableTimerForm = () => {
     const [isOpen, setIsOpen] = React.useState(false);
 
@@ -310,6 +312,9 @@ const SettingMenu = () => {
         setAnchorEl(null);
     };
 
+    const { toggleEditFormOpen } = React.useContext(EditFormContext);
+
+    // console.log(toggleEditFormOpen);
     return (
         <>
             <IconButton onClick={handleClick}>
@@ -322,16 +327,12 @@ const SettingMenu = () => {
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
             >
-                <EditableTimerContext.Consumer>
-                    {({ handleEditFormOpen }) => (
-                        <StyledMenuItem onClick={() => handleEditFormOpen}>
-                            <ListItemIcon>
-                                <EditIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Update" />
-                        </StyledMenuItem>
-                    )}
-                </EditableTimerContext.Consumer>
+                <StyledMenuItem onClick={toggleEditFormOpen}>
+                    <ListItemIcon>
+                        <EditIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Update" />
+                </StyledMenuItem>
                 <StyledMenuItem>
                     <ListItemIcon>
                         <DeleteIcon />
