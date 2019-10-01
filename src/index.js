@@ -8,36 +8,26 @@ import {
     Card,
     CardHeader,
     CardContent,
-    IconButton,
     TextField,
     ButtonGroup,
     Button,
-    Fab
+    Fab,
+    IconButton
 } from "@material-ui/core";
-import EditIcon from "@material-ui/icons/Edit";
-import DeleteIcon from "@material-ui/icons/Delete";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
 import AddIcon from "@material-ui/icons/Add";
+import DeleteIcon from "@material-ui/icons/Delete";
+import EditIcon from "@material-ui/icons/Edit";
+
+import { withStyles } from "@material-ui/core/styles";
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
+import ListItemIcon from "@material-ui/core/ListItemIcon";
+import ListItemText from "@material-ui/core/ListItemText";
 
 // const TimersContext = React.createContext();
 
 const TimerDashboard = () => {
-    // const [timers, setTimers] = React.useState([
-    //     {
-    //         title: "Learn React",
-    //         project: "World Domination",
-    //         elapsed: "8986300",
-    //         runningSince: null,
-    //         editFormOpen: false
-    //     },
-    //     {
-    //         title: "Use Hook",
-    //         project: "React FTW",
-    //         elapsed: "3890985",
-    //         runningSince: null,
-    //         editFormOpen: true
-    //     }
-    // ]);
     return (
         <Container maxWidth="sm">
             <Box display="flex" justifyContent="center" m={3} mb={1}>
@@ -96,32 +86,55 @@ const EditableTimer = ({
     }
 };
 
-const Timer = ({ title, project, elapsed }) => {
+const Timer = ({ title, project, elapsed, runningSince }) => {
+    // Convert elapsed to HH:MM:SS
+    function renderElapsedString(elapsed, runningSince) {
+        let totalElapsed = elapsed;
+        if (runningSince) {
+            totalElapsed += Date.now() - runningSince;
+        }
+        return millisecondsToHuman(totalElapsed);
+    }
+
+    function millisecondsToHuman(ms) {
+        const seconds = Math.floor((ms / 1000) % 60);
+        const minutes = Math.floor((ms / 1000 / 60) % 60);
+        const hours = Math.floor(ms / 1000 / 60 / 60);
+
+        const humanized = [
+            pad(hours.toString(), 2),
+            pad(minutes.toString(), 2),
+            pad(seconds.toString(), 2)
+        ].join(":");
+
+        return humanized;
+    }
+
+    function pad(numberString, size) {
+        let padded = numberString;
+        while (padded.length < size) padded = `0${padded}`;
+        return padded;
+    }
+
     return (
         <Box display="flex" justifyContent="center" m={3} mb={1}>
             <Card raised={true} style={{ width: 350 }}>
                 <CardHeader
+                    style={{ height: 50 }}
                     title={title}
                     subheader={project}
-                    action={
-                        <IconButton aria-label="settings">
-                            <MoreVertIcon />
-                        </IconButton>
-                    }
+                    action={<SettingMenu />}
                 />
                 <Divider />
-                <CardContent>
-                    <Typography align="center" variant="h2" color="primary">
-                        {elapsed}
+                <CardContent style={{ height: 150 }}>
+                    <Typography
+                        style={{ paddingTop: 30 }}
+                        align="center"
+                        variant="h2"
+                        color="primary"
+                    >
+                        {renderElapsedString(elapsed, runningSince)}
                     </Typography>
-                    <div>
-                        <IconButton edge="end">
-                            <DeleteIcon />
-                        </IconButton>
-                        <IconButton edge="end">
-                            <EditIcon />
-                        </IconButton>
-                    </div>
                 </CardContent>
                 <Button
                     fullWidth
@@ -136,19 +149,24 @@ const Timer = ({ title, project, elapsed }) => {
     );
 };
 
-const IsOpenContext = React.createContext(false);
 const TimerForm = ({ title, project }) => {
-    const [isOpen, setIsOpen] = React.useState(false);
-
     const submitText = title ? "Update" : "Create";
     return (
         <Box display="flex" justifyContent="center" m={3} mb={1}>
             <Card raised={true} style={{ width: 350 }}>
-                <CardHeader title={`${submitText} Timer`} />
+                <CardHeader
+                    title={`${submitText} Timer`}
+                    subheader="Update title or project description"
+                    style={{ height: 50 }}
+                />
                 <Divider />
                 <CardContent>
                     <form
-                        style={{ display: "flex", flexWrap: "wrap" }}
+                        style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            height: 150
+                        }}
                         noValidate
                         autoComplete="off"
                     >
@@ -203,6 +221,77 @@ const ToggleableTimerForm = ({ isOpen }) => {
             </Box>
         );
     }
+};
+
+const StyledMenu = withStyles({
+    paper: {
+        border: "1px solid #d3d4d5"
+    }
+})(props => (
+    <Menu
+        elevation={0}
+        getContentAnchorEl={null}
+        anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "center"
+        }}
+        transformOrigin={{
+            vertical: "top",
+            horizontal: "center"
+        }}
+        {...props}
+    />
+));
+
+const StyledMenuItem = withStyles(theme => ({
+    root: {
+        "&:focus": {
+            backgroundColor: theme.palette.primary.main,
+            "& .MuiListItemIcon-root, & .MuiListItemText-primary": {
+                color: theme.palette.common.white
+            }
+        }
+    }
+}))(MenuItem);
+
+const SettingMenu = () => {
+    const [anchorEl, setAnchorEl] = React.useState(null);
+
+    const handleClick = event => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    return (
+        <>
+            <IconButton onClick={handleClick}>
+                <MoreVertIcon />
+            </IconButton>
+            <StyledMenu
+                id="customized-menu"
+                anchorEl={anchorEl}
+                keepMounted
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+            >
+                <StyledMenuItem>
+                    <ListItemIcon>
+                        <EditIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Update" />
+                </StyledMenuItem>
+                <StyledMenuItem>
+                    <ListItemIcon>
+                        <DeleteIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Delete" />
+                </StyledMenuItem>
+            </StyledMenu>
+        </>
+    );
 };
 
 ReactDOM.render(<TimerDashboard />, document.querySelector("#root"));
