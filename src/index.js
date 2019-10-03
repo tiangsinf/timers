@@ -27,24 +27,28 @@ import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
 
 // Stateful: hold toggle data
+const TimersContext = React.createContext({
+    timers: {},
+    setTimer: () => {}
+});
 const TimerDashboard = () => {
     const [timers, setTimer] = React.useState([
         {
             id: uuidv4(),
             title: "Learn React",
             project: "World Domination",
-            elapsed: "8986300",
-            runningSince: Date.now(),
+            elapsed: "86300",
+            runningSince: null
         },
         {
             id: uuidv4(),
             title: "Use Hook",
             project: "React FTW",
             elapsed: "3890985",
-            runningSince: null,
-        },
+            runningSince: null
+        }
     ]);
-    
+
     return (
         <Container maxWidth="sm">
             <Box display="flex" justifyContent="center" m={3} mb={1}>
@@ -54,16 +58,21 @@ const TimerDashboard = () => {
                 <Divider />
             </Box>
             <Box justifyContent="center" m={3} mb={1}>
-                <EditableTimerList timers={timers} />
-                <ToggleableTimerForm />
+                <TimersContext.Provider value={{ timers }}>
+                    <EditableTimerList />
+                    <ToggleableTimerForm />
+                </TimersContext.Provider>
             </Box>
         </Container>
     );
 };
 
 // Statefull: hold timer property
-const EditableTimerList = ({ timers }) => {
+const EditableTimerList = () => {
     // console.log(timers[0].id);
+
+    const { timers } = React.useContext(TimersContext);
+
     return timers.map(timer => (
         <EditableTimer
             key={timer.id}
@@ -79,30 +88,37 @@ const EditableTimerList = ({ timers }) => {
 // Stateful: hold editFormOpen status
 const EditFormContext = React.createContext({
     editFormOpen: false,
-    toggleEditFormOpen: () => {}
+    toggleEditFormOpen: () => {},
+    toggleEditFormClose: () => {}
 });
 
 const EditableTimer = ({ id, title, project, elapsed, runningSince }) => {
-
     const [editFormOpen, setEditFormOpen] = React.useState(false);
     const toggleEditFormOpen = () => {
         setEditFormOpen(true);
     };
+    const toggleEditFormClose = () => {
+        setEditFormOpen(false);
+    };
 
     if (editFormOpen) {
         return (
-            <TimerForm title={title} project={project} />
+            <EditFormContext.Provider value={{ toggleEditFormClose }}>
+                <TimerForm title={title} project={project} />
+            </EditFormContext.Provider>
         );
     } else {
         return (
-            <EditFormContext.Provider value={{ editFormOpen, toggleEditFormOpen }}>
-            <Timer
-                id={id}
-                title={title}
-                project={project}
-                elapsed={elapsed}
-                runningSince={runningSince}
-            />
+            <EditFormContext.Provider
+                value={{ editFormOpen, toggleEditFormOpen }}
+            >
+                <Timer
+                    id={id}
+                    title={title}
+                    project={project}
+                    elapsed={elapsed}
+                    runningSince={runningSince}
+                />
             </EditFormContext.Provider>
         );
     }
@@ -173,7 +189,7 @@ const Timer = ({ title, project, elapsed, runningSince }) => {
 };
 
 // Stateful: Form is always stateful.
-const TimerForm = ({ id, title, project, onInformedFabClose }) => {
+const TimerForm = ({ id, title, project, isOpen, onInformedFormClose }) => {
     const [formData, setTimerFormData] = React.useState({
         id: id || "",
         title: title || "",
@@ -182,8 +198,14 @@ const TimerForm = ({ id, title, project, onInformedFabClose }) => {
 
     const submitText = formData.id ? "Update" : "Create";
 
-    const informFabClose = () => {
-        onInformedFabClose();
+    const { toggleEditFormClose } = React.useContext(EditFormContext);
+
+    const informFormSubmit = () => {
+        // onInformFormSubmit();
+    };
+
+    const informFormClose = () => {
+        onInformedFormClose();
     };
 
     return (
@@ -232,13 +254,17 @@ const TimerForm = ({ id, title, project, onInformedFabClose }) => {
                     </form>
                 </CardContent>
                 <ButtonGroup fullWidth size="large">
-                    <Button variant="contained" color="primary">
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={informFormSubmit}
+                    >
                         {submitText}
                     </Button>
                     <Button
                         variant="contained"
                         color="secondary"
-                        onClick={informFabClose}
+                        onClick={isOpen ? informFormClose : toggleEditFormClose}
                     >
                         Cancel
                     </Button>
@@ -254,7 +280,12 @@ const ToggleableTimerForm = () => {
     const [isOpen, setIsOpen] = React.useState(false);
 
     if (isOpen) {
-        return <TimerForm onInformedFabClose={() => setIsOpen(false)} />;
+        return (
+            <TimerForm
+                isOpen={isOpen}
+                onInformedFormClose={() => setIsOpen(false)}
+            />
+        );
     } else {
         return (
             <Box align="center" m={4}>
